@@ -2,9 +2,14 @@ package ru.yandexpraktikum.cardsanimation.views
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import ru.yandexpraktikum.cardsanimation.compose.AnimatedCard
+import ru.yandexpraktikum.cardsanimation.compose.reorderCards
 import ru.yandexpraktikum.cardsanimation.model.CardData
+import kotlin.math.abs
 
 class AnimatedCardStackView @JvmOverloads constructor(
     context: Context,
@@ -15,13 +20,8 @@ class AnimatedCardStackView @JvmOverloads constructor(
     private var cardDataList: List<CardData> = emptyList()
     private val cards = mutableListOf<AnimatedCardView>()
     private var isRotated = false
-        //временно для проверки кликом
-    init {
-        setOnClickListener {
-            isRotated = !isRotated
-            updateCardPositions()
-        }
-    }
+    private var horizontalDragOffset = 0f
+    private var verticalDragOffset = 0f
 
     fun setCards(newCardDataList: List<CardData>) {
         cardDataList = newCardDataList
@@ -80,7 +80,6 @@ class AnimatedCardStackView @JvmOverloads constructor(
             cardView.pivotY = cardHeight
 
             // TODO: [Задание 1] Замените на метод, который анимирует движение карты
-// было           cardView.rotation = targetRotation
             cardView.animateToRotation(targetRotation)
         }
     }
@@ -105,6 +104,75 @@ class AnimatedCardStackView @JvmOverloads constructor(
     }
     // TODO: [Задание 2] Добавьте обработку жестов
     // Подсказка: Используйте GestureDetector с методом onFling для обработки свайпов
+
+    private val gestureDetector = GestureDetector(
+        context,
+        object : GestureDetector.SimpleOnGestureListener() {
+
+            override fun onDown(e: MotionEvent): Boolean {
+                return true
+            }
+
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                horizontalDragOffset += distanceX
+                verticalDragOffset += distanceY
+
+                Log.d(
+                    "CardsGesture",
+                    "onScroll x=$horizontalDragOffset y=$verticalDragOffset"
+                )
+
+                return true
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                Log.d(
+                    "CardsGesture",
+                    "onFling velocityX=$velocityX velocityY=$velocityY"
+                )
+
+                return true
+            }
+        }
+    )
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        gestureDetector.onTouchEvent(event)
+
+        if (event.action == MotionEvent.ACTION_UP) {
+            val horizontalAbs = abs(horizontalDragOffset)
+            val verticalAbs = abs(verticalDragOffset)
+
+            when {
+                verticalAbs > horizontalAbs -> {
+                    Log.d("CardsGesture", "slow vertical swipe: $verticalDragOffset")
+                }
+
+                horizontalAbs > verticalAbs -> {
+                    Log.d("CardsGesture", "slow horizontal swipe: $horizontalDragOffset")
+                }
+
+                else -> {
+                    Log.d("CardsGesture", "unknown swipe")
+                }
+            }
+
+            horizontalDragOffset = 0f
+            verticalDragOffset = 0f
+        }
+
+        return true
+    }
+
 
     // TODO: [Задание 3] Добавьте обработку вертикальных свайпов (вверх/вниз)
 

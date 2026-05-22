@@ -1,8 +1,7 @@
 package ru.yandexpraktikum.cardsanimation.compose
 
-import androidx.compose.foundation.clickable
+import android.util.Log
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,11 +12,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.tooling.preview.Preview
-import ru.yandexpraktikum.cardsanimation.AnimatedCardScreen
-import ru.yandexpraktikum.cardsanimation.R
 import ru.yandexpraktikum.cardsanimation.model.CardData
-import ru.yandexpraktikum.cardsanimation.ui.theme.CardsAnimationTheme
+import kotlin.math.abs
 
 /**
  * Метод для вычисления поворота карты в конкретной позиции
@@ -43,43 +39,66 @@ fun AnimatedCardStack(cards: List<CardData>) {
     val cardCount = cards.size
     var isRotated by remember { mutableStateOf(false) }
 
-    //временно для проверки кликом
-    val interactionSource = remember {
-        MutableInteractionSource()
-    }
-
     // TODO: [Задание 2] Добавьте обработку жестов
     // Подсказка: Используйте Modifier.pointerInput() с методом detectDragGestures()
-
-//    var dragOffsetX = 0f
-    //временно для проверки кликом, далее заготовка для задания 2
+    var horizontalDragOffset = 0f
+    var verticalDragOffset = 0f
     Box(
         modifier = Modifier
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) {
-                isRotated = !isRotated
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = {
+                        horizontalDragOffset = 0f
+                        verticalDragOffset = 0f
+                        Log.d("CardsGesture", "drag start")
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        horizontalDragOffset += dragAmount.x
+                        verticalDragOffset += dragAmount.y
+                        Log.d(
+                            "CardsGesture",
+                            "drag x=$horizontalDragOffset y=$verticalDragOffset"
+                        )
+                    },
+                    onDragEnd = {
+                        val horizontalAbs = abs(horizontalDragOffset)
+                        val verticalAbs = abs(verticalDragOffset)
+                        when {
+                            verticalAbs > horizontalAbs -> {
+                                if (verticalDragOffset < 0f) {
+                                    Log.d("CardsGesture", "vertical swipe UP: $verticalDragOffset")
+                                } else {
+                                    Log.d(
+                                        "CardsGesture",
+                                        "vertical swipe DOWN: $verticalDragOffset"
+                                    )
+                                }
+                            }
+
+                            horizontalAbs > verticalAbs -> {
+                                if (horizontalDragOffset < 0f) {
+                                    Log.d(
+                                        "CardsGesture",
+                                        "horizontal swipe LEFT: $horizontalDragOffset"
+                                    )
+                                } else {
+                                    Log.d(
+                                        "CardsGesture",
+                                        "horizontal swipe RIGHT: $horizontalDragOffset"
+                                    )
+                                }
+                            }
+
+                            else -> {
+                                Log.d("CardsGesture", "unknown swipe")
+                            }
+                        }
+                        horizontalDragOffset = 0f
+                        verticalDragOffset = 0f
+
+                    })
             },
-//            .pointerInput(Unit){
-//                detectDragGestures(
-//                    onDragStart = {
-//                        dragOffsetX = 0f
-//                    },
-//                    onDrag = { change, dragAmount ->
-//                        change.consume()
-//                        dragOffsetX += dragAmount.x
-//                    },
-//                    onDragEnd = {
-//                        if (dragOffsetX > 50f) {
-//                            isRotated = true
-//                        } else if (dragOffsetX < -50f) {
-//                            isRotated = false
-//                        }
-//
-//                        dragOffsetX = 0f
-//                    })
-//            },
         contentAlignment = Alignment.Center
     ) {
         cards.forEachIndexed { i, cardData ->
@@ -104,19 +123,4 @@ fun reorderCards(cards: List<CardData>): List<CardData> {
     return cards.drop(1) + cards.first()
 }
 
-// превью для отладки - потом уберу
-//@Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
-//@Composable
-//fun PreviewAnimatedCardScreen() {
-//    CardsAnimationTheme {
-//        AnimatedCardScreen(
-//            cards = listOf(
-//                CardData(R.drawable.card_clover),
-//                CardData(R.drawable.card_hearts),
-//                CardData(R.drawable.card_spades),
-//                CardData(R.drawable.card_diamond)
-//            )
-//        )
-//    }
-//}
 
