@@ -3,6 +3,7 @@ package ru.yandexpraktikum.cardsanimation.views
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.FrameLayout
+import ru.yandexpraktikum.cardsanimation.compose.AnimatedCard
 import ru.yandexpraktikum.cardsanimation.model.CardData
 
 class AnimatedCardStackView @JvmOverloads constructor(
@@ -14,6 +15,13 @@ class AnimatedCardStackView @JvmOverloads constructor(
     private var cardDataList: List<CardData> = emptyList()
     private val cards = mutableListOf<AnimatedCardView>()
     private var isRotated = false
+        //временно для проверки кликом
+    init {
+        setOnClickListener {
+            isRotated = !isRotated
+            updateCardPositions()
+        }
+    }
 
     fun setCards(newCardDataList: List<CardData>) {
         cardDataList = newCardDataList
@@ -72,7 +80,8 @@ class AnimatedCardStackView @JvmOverloads constructor(
             cardView.pivotY = cardHeight
 
             // TODO: [Задание 1] Замените на метод, который анимирует движение карты
-            cardView.rotation = targetRotation
+// было           cardView.rotation = targetRotation
+            cardView.animateToRotation(targetRotation)
         }
     }
 
