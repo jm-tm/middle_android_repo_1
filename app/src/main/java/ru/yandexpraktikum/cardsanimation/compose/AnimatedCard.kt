@@ -29,12 +29,20 @@ fun AnimatedCard(
     targetRotation: Float,
     isAnimating: Boolean = false,
     animationStep: Int = 0,
-    onAnimationStepComplete: ((Int) -> Unit)? = null
+    onAnimationStepComplete: ((Int) -> Unit)? = null,
+    finalRotation: Float = targetRotation,
 ) {
     val animatedRotation by animateFloatAsState(
-        targetValue = targetRotation,
-        animationSpec = tween(durationMillis = 600),
-        label = "cardRotation"
+        targetValue = when {
+            animationStep == 3 -> finalRotation
+            isAnimating -> targetRotation
+            else -> targetRotation
+        },
+        animationSpec = tween(durationMillis = if (animationStep == 3) 300 else 800),
+        finishedListener = {
+            if (animationStep == 3 && isAnimating) onAnimationStepComplete?.invoke(3)
+        },
+        label = "rotation"
     )
     val density = LocalDensity.current
     val shouldBringToFront = isAnimating && animationStep >= 2
@@ -88,15 +96,12 @@ fun AnimatedCard(
             }
         },
         animationSpec = tween(durationMillis = 300),
-//        finishedListener = { if (isAnimating && animationStep == 1) onAnimationStepComplete?.invoke(1) },
         label = "translationY"
     )
 
     Card(
         modifier = Modifier
             .size(width = 100.dp, height = 160.dp)
-            // TODO: [Задание 5] Добавьте анимацию карты при свайпе вправо или влево
-
             .graphicsLayer {
                 rotationZ = animatedRotation
                 transformOrigin = TransformOrigin(0.5f, 1.0f)

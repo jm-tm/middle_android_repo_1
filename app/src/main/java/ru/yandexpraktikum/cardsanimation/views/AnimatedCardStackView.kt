@@ -103,10 +103,75 @@ class AnimatedCardStackView @JvmOverloads constructor(
             bringCardToFront(bottomCard)
 
             bottomCard.moveCardToTop {
-                isAnimating = false
-                animationStep = 0
+                animationStep = 3
+
+                reorderCardsData()
+                animateAllCardsToFinalPositions()
             }
         }
+    }
+
+    private fun reorderCardsData() {
+        cardDataList = reorderCards(cardDataList)
+
+        val bottomCardView = cards.removeAt(0)
+        cards.add(bottomCardView)
+
+        cards.forEachIndexed { index, cardView ->
+            cardView.setCardData(cardDataList[index])
+        }
+    }
+
+    private fun animateAllCardsToFinalPositions() {
+        var completedAnimations = 0
+        val totalAnimations = cards.size
+
+        cards.forEachIndexed { index, cardView ->
+            val finalRotation = calculateFinalRotation(index)
+
+            cardView.adjustToFinalPosition(
+                finalRotation = finalRotation,
+                finalZOrder = index
+            ) {
+                completedAnimations++
+
+                if (completedAnimations == totalAnimations) {
+                    finalizeCardPositions()
+                }
+            }
+        }
+    }
+
+    private fun calculateFinalRotation(cardIndex: Int): Float {
+        val cardCount = cards.size
+
+        return if (isRotated) {
+            val angleStep = if (cardCount > 1) {
+                180f / (cardCount - 1)
+            } else {
+                0f
+            }
+
+            90f - (cardIndex * angleStep)
+        } else {
+            val angleStep = if (cardCount > 1) {
+                45f / (cardCount - 1)
+            } else {
+                0f
+            }
+
+            22.5f - (cardIndex * angleStep)
+        }
+    }
+
+    private fun finalizeCardPositions() {
+        cards.forEachIndexed { index, card ->
+            card.setStackPosition(index)
+            card.rotation = calculateFinalRotation(index)
+        }
+
+        isAnimating = false
+        animationStep = 0
     }
 
     // Простая функция перестановки карт

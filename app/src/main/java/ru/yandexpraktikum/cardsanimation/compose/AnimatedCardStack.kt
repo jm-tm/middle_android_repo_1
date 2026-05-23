@@ -38,7 +38,8 @@ private const val SwipeThreshold = 100f
 
 private data class CardSwapAnimationState(
     val isAnimating: Boolean = false,
-    val animationStep: Int = 0
+    val animationStep: Int = 0,
+    val animatingCardId: Int? = null
 )
 
 @Composable
@@ -80,10 +81,9 @@ fun AnimatedCardStack(cards: List<CardData>) {
                                 onCardsReorder = {
                                     animationState = CardSwapAnimationState(
                                         isAnimating = true,
-                                        animationStep = 1
+                                        animationStep = 1,
+                                        animatingCardId = currentCards.firstOrNull()?.imageResId
                                     )
-//                                    currentCards = reorderCards(currentCards)
-//                                    animationState = CardSwapAnimationState()
                                 }
                             )
                         }
@@ -98,12 +98,22 @@ fun AnimatedCardStack(cards: List<CardData>) {
             key(cardData.imageResId) {
                 val targetRotation = calculateCardRotation(i, cardCount, isRotated)
 
+                val finalRotation = calculateCardRotation(
+                    cardIndex = i,
+                    cardCount = cardCount,
+                    isRotated = isRotated
+                )
+
+                val isThisCardAnimating =
+                    animationState.isAnimating &&
+                            animationState.animatingCardId == cardData.imageResId
+
                 AnimatedCard(
                     cardIndex = i,
                     targetRotation = targetRotation,
+                    finalRotation = finalRotation,
                     cardData = cardData,
-                    // TODO: [Задание 5] Здесь добавьте параметры анимации карты
-                    isAnimating = animationState.isAnimating && i == 0,
+                    isAnimating = isThisCardAnimating,
                     animationStep = animationState.animationStep,
                     onAnimationStepComplete = { completedStep ->
                         when (completedStep) {
@@ -114,11 +124,18 @@ fun AnimatedCardStack(cards: List<CardData>) {
                             }
 
                             2 -> {
+                                currentCards = reorderCards(currentCards)
+
+                                animationState = animationState.copy(
+                                    animationStep = 3
+                                )
+                            }
+
+                            3 -> {
                                 animationState = CardSwapAnimationState()
                             }
                         }
                     }
-
                 )
             }
         }
