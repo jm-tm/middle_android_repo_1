@@ -38,8 +38,9 @@ private const val SwipeThreshold = 100f
 
 @Composable
 fun AnimatedCardStack(cards: List<CardData>) {
-    val cardCount = cards.size
     var isRotated by remember { mutableStateOf(false) }
+    var currentCards by remember { mutableStateOf(cards) }
+    val cardCount = currentCards.size
 
     Box(
         modifier = Modifier
@@ -62,34 +63,26 @@ fun AnimatedCardStack(cards: List<CardData>) {
                         )
                     },
                     onDragEnd = {
-                        val horizontalAbs = abs(horizontalDragOffset)
-                        val verticalAbs = abs(verticalDragOffset)
-                        verticalAbs > horizontalAbs
-
-                        when {
-                            verticalAbs > horizontalAbs -> {
-                                handleVerticalSwipe(
-                                    verticalDragOffset,
-                                    SwipeThreshold,
-                                    onFanStateChange = { newState ->
-                                        isRotated = newState
-                                    }
-                                )
+                        handleDragEnd(
+                            horizontalDragOffset = horizontalDragOffset,
+                            verticalDragOffset = verticalDragOffset,
+                            threshold = SwipeThreshold,
+                            onFanStateChange = { newState ->
+                                isRotated = newState
+                            },
+                            onCardsReorder = {
+                                currentCards = reorderCards(currentCards)
                             }
-
-                            verticalAbs < horizontalAbs -> {
-
-                            }
-                        }
+                        )
 
                         horizontalDragOffset = 0f
                         verticalDragOffset = 0f
-
-                    })
+                    }
+                )
             },
         contentAlignment = Alignment.Center
     ) {
-        cards.forEachIndexed { i, cardData ->
+        currentCards.forEachIndexed { i, cardData ->
             key(cardData.imageResId) {
                 val targetRotation = calculateCardRotation(i, cardCount, isRotated)
 
@@ -111,6 +104,39 @@ fun reorderCards(cards: List<CardData>): List<CardData> {
     return cards.drop(1) + cards.first()
 }
 
+private fun handleDragEnd(
+    horizontalDragOffset: Float,
+    verticalDragOffset: Float,
+    threshold: Float,
+    onFanStateChange: (Boolean) -> Unit,
+    onCardsReorder: () -> Unit
+) {
+    val horizontalAbs = abs(horizontalDragOffset)
+    val verticalAbs = abs(verticalDragOffset)
+
+    when {
+        verticalAbs > horizontalAbs -> {
+            handleVerticalSwipe(
+                verticalDragOffset = verticalDragOffset,
+                threshold = threshold,
+                onFanStateChange = onFanStateChange
+            )
+        }
+
+        horizontalAbs > verticalAbs -> {
+            handleHorizontalSwipe(
+                horizontalDragOffset = horizontalDragOffset,
+                threshold = threshold,
+                onCardsReorder = onCardsReorder
+            )
+        }
+
+        else -> {
+            Log.d("CardsGesture", "unknown swipe")
+        }
+    }
+}
+
 private fun handleVerticalSwipe(
     verticalDragOffset: Float,
     threshold: Float,
@@ -129,6 +155,28 @@ private fun handleVerticalSwipe(
 
         else -> {
             Log.d("CardsGesture", "vertical swipe too small: $verticalDragOffset")
+        }
+    }
+}
+
+private fun handleHorizontalSwipe(
+    horizontalDragOffset: Float,
+    threshold: Float,
+    onCardsReorder: () -> Unit
+) {
+    when {
+        horizontalDragOffset < -threshold -> {
+            onCardsReorder()
+            Log.d("CardsGesture", "horizontal swipe LEFT: $horizontalDragOffset")
+        }
+
+        horizontalDragOffset > threshold -> {
+            onCardsReorder()
+            Log.d("CardsGesture", "horizontal swipe RIGHT: $horizontalDragOffset")
+        }
+
+        else -> {
+            Log.d("CardsGesture", "horizontal swipe too small: $horizontalDragOffset")
         }
     }
 }

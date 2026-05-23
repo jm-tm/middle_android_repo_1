@@ -93,7 +93,13 @@ class AnimatedCardStackView @JvmOverloads constructor(
         // TODO: [Задание 5] Добавьте анимацию перетасовки карт
         // На данном этапе просто быстро двигаем нижнюю карту наверх
         cardDataList = reorderCards(cardDataList)
-        setupCards()
+//        setupCards()
+        cards.forEachIndexed { index, cardView ->
+            cardView.setCardData(cardDataList[index])
+            cardView.setStackPosition(index)
+        }
+
+        updateCardPositions()
     }
 
     // Простая функция перестановки карт
@@ -146,32 +152,35 @@ class AnimatedCardStackView @JvmOverloads constructor(
         gestureDetector.onTouchEvent(event)
 
         if (event.action == MotionEvent.ACTION_UP) {
-            val horizontalAbs = abs(horizontalDragOffset)
-            val verticalAbs = abs(verticalDragOffset)
-
-            when {
-                verticalAbs > horizontalAbs -> {
-                    handleVerticalSwipe(verticalDragOffset)
-                }
-
-                horizontalAbs > verticalAbs -> {
-                    Log.d("CardsGesture", "slow horizontal swipe: $horizontalDragOffset")
-                }
-
-                else -> {
-                    Log.d("CardsGesture", "unknown swipe")
-                }
-            }
-
-            horizontalDragOffset = 0f
-            verticalDragOffset = 0f
+            handleDragEnd()
         }
 
         return true
     }
 
+    private fun handleDragEnd() {
+        val horizontalAbs = abs(horizontalDragOffset)
+        val verticalAbs = abs(verticalDragOffset)
 
-    // TODO: [Задание 3] Добавьте обработку вертикальных свайпов (вверх/вниз)
+        when {
+            verticalAbs > horizontalAbs -> {
+                handleVerticalSwipe(verticalDragOffset)
+            }
+
+            horizontalAbs > verticalAbs -> {
+                handleHorizontalSwipe(horizontalDragOffset)
+            }
+
+            else -> {
+                Log.d("CardsGesture", "unknown swipe")
+            }
+        }
+
+        horizontalDragOffset = 0f
+        verticalDragOffset = 0f
+    }
+
+
     private fun handleVerticalSwipe(
         verticalDragOffset: Float
     ) {
@@ -195,4 +204,30 @@ class AnimatedCardStackView @JvmOverloads constructor(
     }
 
     // TODO: [Задание 4] Добавьте обработку горизонтальных свайпов (влево/вправо)
+    private fun handleHorizontalSwipe(horizontalDragOffset: Float) {
+        when {
+            horizontalDragOffset < -swipeThreshold -> {
+                val bottomCard = cards.firstOrNull()
+                if (bottomCard != null) {
+                    startCardSwapAnimation(bottomCard)
+                }
+
+                Log.d("CardsGesture", "horizontal swipe LEFT: $horizontalDragOffset")
+            }
+
+            horizontalDragOffset > swipeThreshold -> {
+                val bottomCard = cards.firstOrNull()
+                if (bottomCard != null) {
+                    startCardSwapAnimation(bottomCard)
+                }
+
+                Log.d("CardsGesture", "horizontal swipe RIGHT: $horizontalDragOffset")
+            }
+
+            else -> {
+                Log.d("CardsGesture", "horizontal swipe too small: $horizontalDragOffset")
+            }
+        }
+    }
+
 }
