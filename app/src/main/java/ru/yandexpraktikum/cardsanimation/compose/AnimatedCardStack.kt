@@ -34,18 +34,18 @@ fun calculateCardRotation(
     }
 }
 
+private const val SwipeThreshold = 100f
+
 @Composable
 fun AnimatedCardStack(cards: List<CardData>) {
     val cardCount = cards.size
     var isRotated by remember { mutableStateOf(false) }
 
-    // TODO: [Задание 2] Добавьте обработку жестов
-    // Подсказка: Используйте Modifier.pointerInput() с методом detectDragGestures()
-    var horizontalDragOffset = 0f
-    var verticalDragOffset = 0f
     Box(
         modifier = Modifier
             .pointerInput(Unit) {
+                var horizontalDragOffset = 0f
+                var verticalDragOffset = 0f
                 detectDragGestures(
                     onDragStart = {
                         horizontalDragOffset = 0f
@@ -64,36 +64,24 @@ fun AnimatedCardStack(cards: List<CardData>) {
                     onDragEnd = {
                         val horizontalAbs = abs(horizontalDragOffset)
                         val verticalAbs = abs(verticalDragOffset)
+                        verticalAbs > horizontalAbs
+
                         when {
                             verticalAbs > horizontalAbs -> {
-                                if (verticalDragOffset < 0f) {
-                                    Log.d("CardsGesture", "vertical swipe UP: $verticalDragOffset")
-                                } else {
-                                    Log.d(
-                                        "CardsGesture",
-                                        "vertical swipe DOWN: $verticalDragOffset"
-                                    )
-                                }
+                                handleVerticalSwipe(
+                                    verticalDragOffset,
+                                    SwipeThreshold,
+                                    onFanStateChange = { newState ->
+                                        isRotated = newState
+                                    }
+                                )
                             }
 
-                            horizontalAbs > verticalAbs -> {
-                                if (horizontalDragOffset < 0f) {
-                                    Log.d(
-                                        "CardsGesture",
-                                        "horizontal swipe LEFT: $horizontalDragOffset"
-                                    )
-                                } else {
-                                    Log.d(
-                                        "CardsGesture",
-                                        "horizontal swipe RIGHT: $horizontalDragOffset"
-                                    )
-                                }
-                            }
+                            verticalAbs < horizontalAbs -> {
 
-                            else -> {
-                                Log.d("CardsGesture", "unknown swipe")
                             }
                         }
+
                         horizontalDragOffset = 0f
                         verticalDragOffset = 0f
 
@@ -123,4 +111,24 @@ fun reorderCards(cards: List<CardData>): List<CardData> {
     return cards.drop(1) + cards.first()
 }
 
+private fun handleVerticalSwipe(
+    verticalDragOffset: Float,
+    threshold: Float,
+    onFanStateChange: (Boolean) -> Unit
+) {
+    when {
+        verticalDragOffset < -threshold -> {
+            onFanStateChange(true)
+            Log.d("CardsGesture", "vertical swipe UP: $verticalDragOffset")
+        }
 
+        verticalDragOffset > threshold -> {
+            onFanStateChange(false)
+            Log.d("CardsGesture", "vertical swipe DOWN: $verticalDragOffset")
+        }
+
+        else -> {
+            Log.d("CardsGesture", "vertical swipe too small: $verticalDragOffset")
+        }
+    }
+}

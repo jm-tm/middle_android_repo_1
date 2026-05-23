@@ -6,8 +6,6 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.FrameLayout
-import ru.yandexpraktikum.cardsanimation.compose.AnimatedCard
-import ru.yandexpraktikum.cardsanimation.compose.reorderCards
 import ru.yandexpraktikum.cardsanimation.model.CardData
 import kotlin.math.abs
 
@@ -22,6 +20,7 @@ class AnimatedCardStackView @JvmOverloads constructor(
     private var isRotated = false
     private var horizontalDragOffset = 0f
     private var verticalDragOffset = 0f
+    private val swipeThreshold = 100f
 
     fun setCards(newCardDataList: List<CardData>) {
         cardDataList = newCardDataList
@@ -79,7 +78,6 @@ class AnimatedCardStackView @JvmOverloads constructor(
             cardView.pivotX = cardWidth / 2f
             cardView.pivotY = cardHeight
 
-            // TODO: [Задание 1] Замените на метод, который анимирует движение карты
             cardView.animateToRotation(targetRotation)
         }
     }
@@ -102,8 +100,6 @@ class AnimatedCardStackView @JvmOverloads constructor(
     fun reorderCards(cards: List<CardData>): List<CardData> {
         return cards.drop(1) + cards.first()
     }
-    // TODO: [Задание 2] Добавьте обработку жестов
-    // Подсказка: Используйте GestureDetector с методом onFling для обработки свайпов
 
     private val gestureDetector = GestureDetector(
         context,
@@ -145,6 +141,7 @@ class AnimatedCardStackView @JvmOverloads constructor(
             }
         }
     )
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         gestureDetector.onTouchEvent(event)
 
@@ -154,7 +151,7 @@ class AnimatedCardStackView @JvmOverloads constructor(
 
             when {
                 verticalAbs > horizontalAbs -> {
-                    Log.d("CardsGesture", "slow vertical swipe: $verticalDragOffset")
+                    handleVerticalSwipe(verticalDragOffset)
                 }
 
                 horizontalAbs > verticalAbs -> {
@@ -175,6 +172,27 @@ class AnimatedCardStackView @JvmOverloads constructor(
 
 
     // TODO: [Задание 3] Добавьте обработку вертикальных свайпов (вверх/вниз)
+    private fun handleVerticalSwipe(
+        verticalDragOffset: Float
+    ) {
+        when {
+            verticalDragOffset < -swipeThreshold -> {
+                isRotated = true
+                updateCardPositions()
+                Log.d("CardsGesture", "vertical swipe UP: $verticalDragOffset")
+            }
+
+            verticalDragOffset > swipeThreshold -> {
+                isRotated = false
+                updateCardPositions()
+                Log.d("CardsGesture", "vertical swipe DOWN: $verticalDragOffset")
+            }
+
+            else -> {
+                Log.d("CardsGesture", "vertical swipe too small: $verticalDragOffset")
+            }
+        }
+    }
 
     // TODO: [Задание 4] Добавьте обработку горизонтальных свайпов (влево/вправо)
 }
