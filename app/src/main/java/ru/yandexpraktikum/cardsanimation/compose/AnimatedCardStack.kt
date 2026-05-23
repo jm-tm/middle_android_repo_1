@@ -106,8 +106,16 @@ fun AnimatedCardStack(cards: List<CardData>) {
                     isAnimating = animationState.isAnimating && i == 0,
                     animationStep = animationState.animationStep,
                     onAnimationStepComplete = { completedStep ->
-                        if (completedStep == 1) {
-                            animationState = CardSwapAnimationState()
+                        when (completedStep) {
+                            1 -> {
+                                animationState = animationState.copy(
+                                    animationStep = 2
+                                )
+                            }
+
+                            2 -> {
+                                animationState = CardSwapAnimationState()
+                            }
                         }
                     }
 

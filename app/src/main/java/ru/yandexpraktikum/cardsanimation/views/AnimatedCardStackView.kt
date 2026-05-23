@@ -98,21 +98,15 @@ class AnimatedCardStackView @JvmOverloads constructor(
         animationStep = 1
 
         bottomCard.moveCardRight {
-            isAnimating = false
-            animationStep = 0
+            animationStep = 2
+
+            bringCardToFront(bottomCard)
+
+            bottomCard.moveCardToTop {
+                isAnimating = false
+                animationStep = 0
+            }
         }
-
-//        cardDataList = reorderCards(cardDataList)
-
-//        cards.forEachIndexed { index, cardView ->
-//            cardView.setCardData(cardDataList[index])
-//            cardView.setStackPosition(index)
-//        }
-//
-//        updateCardPositions()
-//
-//        isAnimating = false
-//        animationStep = 0
     }
 
     // Простая функция перестановки карт
@@ -246,6 +240,15 @@ class AnimatedCardStackView @JvmOverloads constructor(
                 Log.d("CardsGesture", "horizontal swipe too small: $horizontalDragOffset")
             }
         }
+    }
+
+    private fun bringCardToFront(card: AnimatedCardView) {
+        card.bringToFront()
+
+        val maxElevation = (4 + cards.size + 20).toFloat() *
+                resources.displayMetrics.density
+
+        card.cardView.cardElevation = maxElevation
     }
 
 }
