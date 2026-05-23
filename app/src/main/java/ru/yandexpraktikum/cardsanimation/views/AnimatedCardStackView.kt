@@ -21,6 +21,8 @@ class AnimatedCardStackView @JvmOverloads constructor(
     private var horizontalDragOffset = 0f
     private var verticalDragOffset = 0f
     private val swipeThreshold = 100f
+    private var isAnimating = false
+    private var animationStep = 0
 
     fun setCards(newCardDataList: List<CardData>) {
         cardDataList = newCardDataList
@@ -90,16 +92,22 @@ class AnimatedCardStackView @JvmOverloads constructor(
     }
 
     private fun startCardSwapAnimation(bottomCard: AnimatedCardView) {
-        // TODO: [Задание 5] Добавьте анимацию перетасовки карт
-        // На данном этапе просто быстро двигаем нижнюю карту наверх
+        if (isAnimating) return
+
+        isAnimating = true
+        animationStep = 1
+
         cardDataList = reorderCards(cardDataList)
-//        setupCards()
+
         cards.forEachIndexed { index, cardView ->
             cardView.setCardData(cardDataList[index])
             cardView.setStackPosition(index)
         }
 
         updateCardPositions()
+
+        isAnimating = false
+        animationStep = 0
     }
 
     // Простая функция перестановки карт
@@ -159,6 +167,12 @@ class AnimatedCardStackView @JvmOverloads constructor(
     }
 
     private fun handleDragEnd() {
+        if (isAnimating) {
+            horizontalDragOffset = 0f
+            verticalDragOffset = 0f
+            return
+        }
+
         val horizontalAbs = abs(horizontalDragOffset)
         val verticalAbs = abs(verticalDragOffset)
 
@@ -203,7 +217,6 @@ class AnimatedCardStackView @JvmOverloads constructor(
         }
     }
 
-    // TODO: [Задание 4] Добавьте обработку горизонтальных свайпов (влево/вправо)
     private fun handleHorizontalSwipe(horizontalDragOffset: Float) {
         when {
             horizontalDragOffset < -swipeThreshold -> {

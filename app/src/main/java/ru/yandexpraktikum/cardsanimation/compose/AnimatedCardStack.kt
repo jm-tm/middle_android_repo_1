@@ -36,11 +36,17 @@ fun calculateCardRotation(
 
 private const val SwipeThreshold = 100f
 
+private data class CardSwapAnimationState(
+    val isAnimating: Boolean = false,
+    val animationStep: Int = 0
+)
+
 @Composable
 fun AnimatedCardStack(cards: List<CardData>) {
     var isRotated by remember { mutableStateOf(false) }
     var currentCards by remember { mutableStateOf(cards) }
     val cardCount = currentCards.size
+    var animationState by remember { mutableStateOf(CardSwapAnimationState()) }
 
     Box(
         modifier = Modifier
@@ -63,18 +69,24 @@ fun AnimatedCardStack(cards: List<CardData>) {
                         )
                     },
                     onDragEnd = {
-                        handleDragEnd(
-                            horizontalDragOffset = horizontalDragOffset,
-                            verticalDragOffset = verticalDragOffset,
-                            threshold = SwipeThreshold,
-                            onFanStateChange = { newState ->
-                                isRotated = newState
-                            },
-                            onCardsReorder = {
-                                currentCards = reorderCards(currentCards)
-                            }
-                        )
-
+                        if (!animationState.isAnimating) {
+                            handleDragEnd(
+                                horizontalDragOffset = horizontalDragOffset,
+                                verticalDragOffset = verticalDragOffset,
+                                threshold = SwipeThreshold,
+                                onFanStateChange = { newState ->
+                                    isRotated = newState
+                                },
+                                onCardsReorder = {
+                                    animationState = CardSwapAnimationState(
+                                        isAnimating = true,
+                                        animationStep = 1
+                                    )
+                                    currentCards = reorderCards(currentCards)
+                                    animationState = CardSwapAnimationState()
+                                }
+                            )
+                        }
                         horizontalDragOffset = 0f
                         verticalDragOffset = 0f
                     }
