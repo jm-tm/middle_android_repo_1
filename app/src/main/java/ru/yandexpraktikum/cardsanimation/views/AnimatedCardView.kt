@@ -1,7 +1,7 @@
 package ru.yandexpraktikum.cardsanimation.views
 
-import android.R.attr.button
-import android.R.attr.duration
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.util.AttributeSet
@@ -11,6 +11,7 @@ import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import ru.yandexpraktikum.cardsanimation.R
 import ru.yandexpraktikum.cardsanimation.model.CardData
+import android.animation.Animator
 
 class AnimatedCardView @JvmOverloads constructor(
     context: Context,
@@ -61,9 +62,46 @@ class AnimatedCardView @JvmOverloads constructor(
 
     // TODO: [Задание 5, шаг 1] Добавьте метод для анимации перетасовки карт (первым шагом нижняя карта двигается вправо)
     // fun moveCardRight(onComplete: (() -> Unit)? = null) { ... }
+    fun moveCardRight(onComplete: (() -> Unit)? = null) {
+        val moveDistance = 50f * resources.displayMetrics.density
+        val currentRotationRad = Math.toRadians(rotation.toDouble())
 
+        val deltaX = moveDistance * Math.cos(currentRotationRad).toFloat()
+        val deltaY = moveDistance * Math.sin(currentRotationRad).toFloat()
+
+        val currentX = x
+        val currentY = y
+
+        val animatorX = ObjectAnimator.ofFloat(
+            this,
+            "x",
+            currentX,
+            currentX + deltaX
+        )
+
+        val animatorY = ObjectAnimator.ofFloat(
+            this,
+            "y",
+            currentY,
+            currentY + deltaY
+        )
+
+        AnimatorSet().apply {
+            playTogether(animatorX, animatorY)
+            duration = 300L
+            addListener(
+                object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        onComplete?.invoke()
+                    }
+                }
+            )
+            start()
+        }
+    }
     // TODO: [Задание 5, шаг 2] Добавьте метод для анимации выдвижения нижней карты наверх
     // fun moveCardToTop(onComplete: (() -> Unit)? = null) { ... }
+
 
     // TODO: [Задание 5, шаг 3] Добавьте анимацию перемещения всей колоды карты в желаемую позицию
     // fun adjustToFinalPosition(finalRotation: Float, finalZOrder: Int, onComplete: (() -> Unit)? = null) { ... }

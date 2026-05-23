@@ -82,8 +82,8 @@ fun AnimatedCardStack(cards: List<CardData>) {
                                         isAnimating = true,
                                         animationStep = 1
                                     )
-                                    currentCards = reorderCards(currentCards)
-                                    animationState = CardSwapAnimationState()
+//                                    currentCards = reorderCards(currentCards)
+//                                    animationState = CardSwapAnimationState()
                                 }
                             )
                         }
@@ -101,9 +101,15 @@ fun AnimatedCardStack(cards: List<CardData>) {
                 AnimatedCard(
                     cardIndex = i,
                     targetRotation = targetRotation,
-                    cardData = cardData
+                    cardData = cardData,
                     // TODO: [Задание 5] Здесь добавьте параметры анимации карты
-
+                    isAnimating = animationState.isAnimating && i == 0,
+                    animationStep = animationState.animationStep,
+                    onAnimationStepComplete = { completedStep ->
+                        if (completedStep == 1) {
+                            animationState = CardSwapAnimationState()
+                        }
+                    }
 
                 )
             }

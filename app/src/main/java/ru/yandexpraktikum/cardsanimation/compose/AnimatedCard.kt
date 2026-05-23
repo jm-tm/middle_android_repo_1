@@ -14,23 +14,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ru.yandexpraktikum.cardsanimation.model.CardData
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun AnimatedCard(
     cardIndex: Int,
     cardData: CardData,
     targetRotation: Float,
+    isAnimating: Boolean = false,
+    animationStep: Int = 0,
+    onAnimationStepComplete: ((Int) -> Unit)? = null
 ) {
-    // TODO: [Задание 1] Добавьте анимацию поворота карты
-    // Подсказка: используйте animateFloatAsState для плавной анимации
-
     val animatedRotation by animateFloatAsState(
         targetValue = targetRotation,
         animationSpec = tween(durationMillis = 600),
         label = "cardRotation"
+    )
+    val density = LocalDensity.current
+
+    val animatedTranslationX by animateFloatAsState(
+        targetValue = if (isAnimating && animationStep == 1) {
+            val moveDistance = with(density) { 50.dp.toPx() }
+            val rotationRad = Math.toRadians(targetRotation.toDouble())
+            moveDistance * cos(rotationRad).toFloat()
+        } else 0f,
+        animationSpec = tween(durationMillis = 300),
+        finishedListener = { if (isAnimating && animationStep == 1) onAnimationStepComplete?.invoke(1) },
+        label = "translationX"
+    )
+
+    val animatedTranslationY by animateFloatAsState(
+        targetValue = if (isAnimating && animationStep == 1) {
+            val moveDistance = with(density) { 50.dp.toPx() }
+            val rotationRad = Math.toRadians(targetRotation.toDouble())
+            moveDistance * sin(rotationRad).toFloat()
+        } else 0f,
+        animationSpec = tween(durationMillis = 300),
+        finishedListener = { if (isAnimating && animationStep == 1) onAnimationStepComplete?.invoke(1) },
+        label = "translationY"
     )
 
     Card(
@@ -41,6 +67,8 @@ fun AnimatedCard(
             .graphicsLayer {
                 rotationZ = animatedRotation
                 transformOrigin = TransformOrigin(0.5f, 1.0f)
+                translationX = if (isAnimating) animatedTranslationX else 0f
+                translationY = if (isAnimating) animatedTranslationY else 0f
             },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
@@ -54,4 +82,6 @@ fun AnimatedCard(
             contentScale = ContentScale.Crop
         )
     }
+
+
 }

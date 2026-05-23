@@ -97,17 +97,22 @@ class AnimatedCardStackView @JvmOverloads constructor(
         isAnimating = true
         animationStep = 1
 
-        cardDataList = reorderCards(cardDataList)
-
-        cards.forEachIndexed { index, cardView ->
-            cardView.setCardData(cardDataList[index])
-            cardView.setStackPosition(index)
+        bottomCard.moveCardRight {
+            isAnimating = false
+            animationStep = 0
         }
 
-        updateCardPositions()
+//        cardDataList = reorderCards(cardDataList)
 
-        isAnimating = false
-        animationStep = 0
+//        cards.forEachIndexed { index, cardView ->
+//            cardView.setCardData(cardDataList[index])
+//            cardView.setStackPosition(index)
+//        }
+//
+//        updateCardPositions()
+//
+//        isAnimating = false
+//        animationStep = 0
     }
 
     // Простая функция перестановки карт
