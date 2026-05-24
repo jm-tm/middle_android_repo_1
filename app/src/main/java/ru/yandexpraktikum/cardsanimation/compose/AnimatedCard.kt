@@ -22,6 +22,18 @@ import ru.yandexpraktikum.cardsanimation.model.CardData
 import kotlin.math.cos
 import kotlin.math.sin
 
+enum class StepAnimation(
+    val step: Int,
+    val label: String
+){
+    MOVE_RIGHT(step = 1, label = "moveRight"),
+    MOVE_TO_CENTER(step = 2, label = "moveToCenter"),
+    FINAL_ROTATION(3,"finalRotation")
+}
+private const val MOVE_ANIMATION_DURATION = 300
+private const val ROTATION_ANIMATION_DURATION = 800
+private const val FINAL_ROTATION_DURATION = 300
+
 @Composable
 fun AnimatedCard(
     cardIndex: Int,
@@ -34,22 +46,25 @@ fun AnimatedCard(
 ) {
     val animatedRotation by animateFloatAsState(
         targetValue = when {
-            animationStep == 3 -> finalRotation
+            animationStep == StepAnimation.FINAL_ROTATION.step -> finalRotation
             isAnimating -> targetRotation
             else -> targetRotation
         },
-        animationSpec = tween(durationMillis = if (animationStep == 3) 300 else 800),
+        animationSpec = tween(durationMillis =
+            if (animationStep == StepAnimation.FINAL_ROTATION.step)
+                FINAL_ROTATION_DURATION else ROTATION_ANIMATION_DURATION),
         finishedListener = {
-            if (animationStep == 3 && isAnimating) onAnimationStepComplete?.invoke(3)
+            if (animationStep == StepAnimation.FINAL_ROTATION.step && isAnimating)
+                onAnimationStepComplete?.invoke(StepAnimation.FINAL_ROTATION.step)
         },
         label = "rotation"
     )
     val density = LocalDensity.current
-    val shouldBringToFront = isAnimating && animationStep >= 2
+    val shouldBringToFront = isAnimating && animationStep >= StepAnimation.MOVE_TO_CENTER.step
 
     val animatedTranslationX by animateFloatAsState(
         targetValue = when {
-            isAnimating && animationStep == 1 -> {
+            isAnimating && animationStep == StepAnimation.MOVE_RIGHT.step -> {
                 val moveDistance = with(density) {
                     50.dp.toPx()
                 }
@@ -58,7 +73,7 @@ fun AnimatedCard(
                 moveDistance * cos(rotationRad).toFloat()
             }
 
-            isAnimating && animationStep == 2 -> {
+            isAnimating && animationStep == StepAnimation.MOVE_TO_CENTER.step -> {
                 0f
             }
 
@@ -66,12 +81,12 @@ fun AnimatedCard(
                 0f
             }
         },
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = tween(durationMillis = MOVE_ANIMATION_DURATION),
         finishedListener = {
             if (isAnimating) {
                 when (animationStep) {
-                    1 -> onAnimationStepComplete?.invoke(1)
-                    2 -> onAnimationStepComplete?.invoke(2)
+                    StepAnimation.MOVE_RIGHT.step -> onAnimationStepComplete?.invoke(1)
+                    StepAnimation.MOVE_TO_CENTER.step -> onAnimationStepComplete?.invoke(2)
                 }
             }
         },
@@ -81,13 +96,13 @@ fun AnimatedCard(
     val animatedTranslationY by animateFloatAsState(
         targetValue = when {
 
-            (isAnimating && animationStep == 1) -> {
+            (isAnimating && animationStep == StepAnimation.MOVE_RIGHT.step) -> {
                 val moveDistance = with(density) { 50.dp.toPx() }
                 val rotationRad = Math.toRadians(targetRotation.toDouble())
                 moveDistance * sin(rotationRad).toFloat()
             }
 
-            isAnimating && animationStep == 2 -> {
+            isAnimating && animationStep == StepAnimation.MOVE_TO_CENTER.step -> {
                 0f
             }
 
@@ -95,7 +110,7 @@ fun AnimatedCard(
                 0f
             }
         },
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = tween(durationMillis = MOVE_ANIMATION_DURATION),
         label = "translationY"
     )
 

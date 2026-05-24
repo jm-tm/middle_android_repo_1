@@ -193,15 +193,10 @@ class AnimatedCardStackView @JvmOverloads constructor(
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
-                horizontalDragOffset += distanceX
-                verticalDragOffset += distanceY
-
-                Log.d(
-                    "CardsGesture",
-                    "onScroll x=$horizontalDragOffset y=$verticalDragOffset"
+                return handleScroll(
+                    distanceX = distanceX,
+                    distanceY = distanceY
                 )
-
-                return true
             }
 
             override fun onFling(
@@ -210,15 +205,60 @@ class AnimatedCardStackView @JvmOverloads constructor(
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                Log.d(
-                    "CardsGesture",
-                    "onFling velocityX=$velocityX velocityY=$velocityY"
+                return handleFling(
+                    velocityX = velocityX,
+                    velocityY = velocityY
                 )
-
-                return true
             }
         }
     )
+
+    private fun handleScroll(
+        distanceX: Float,
+        distanceY: Float
+    ): Boolean {
+        horizontalDragOffset += distanceX
+        verticalDragOffset += distanceY
+
+        Log.d(
+            "CardsGesture",
+            "onScroll x=$horizontalDragOffset y=$verticalDragOffset"
+        )
+
+        return true
+    }
+
+    private fun handleFling(
+        velocityX: Float,
+        velocityY: Float
+    ): Boolean {
+        Log.d(
+            "CardsGesture",
+            "onFling velocityX=$velocityX velocityY=$velocityY"
+        )
+
+        val horizontalAbs = abs(velocityX)
+        val verticalAbs = abs(velocityY)
+
+        when {
+            verticalAbs > horizontalAbs -> {
+                handleVerticalSwipe(velocityY)
+            }
+
+            horizontalAbs > verticalAbs -> {
+                handleHorizontalSwipe(velocityX)
+            }
+
+            else -> {
+                Log.d("CardsGesture", "unknown fling")
+            }
+        }
+
+        horizontalDragOffset = 0f
+        verticalDragOffset = 0f
+
+        return true
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         gestureDetector.onTouchEvent(event)

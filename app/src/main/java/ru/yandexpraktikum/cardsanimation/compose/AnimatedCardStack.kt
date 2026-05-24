@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,7 @@ fun calculateCardRotation(
 
 private const val SwipeThreshold = 100f
 
+@Immutable
 private data class CardSwapAnimationState(
     val isAnimating: Boolean = false,
     val animationStep: Int = 0,
