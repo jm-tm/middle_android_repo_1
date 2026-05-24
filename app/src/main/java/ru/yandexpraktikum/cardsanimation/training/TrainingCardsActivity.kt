@@ -58,6 +58,9 @@ fun TrainingCardsScreen() {
             modifier = Modifier.height(24.dp)
         )
 
-        TrainingCardStack(isExpanded = isExpanded)
+        TrainingCardStack(
+            cards = listOf("A", "K", "Q"),
+            isExpanded = isExpanded
+        )
     }
 }
