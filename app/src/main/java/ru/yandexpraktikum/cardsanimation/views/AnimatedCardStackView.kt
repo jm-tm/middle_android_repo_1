@@ -2,8 +2,12 @@ package ru.yandexpraktikum.cardsanimation.views
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import ru.yandexpraktikum.cardsanimation.model.CardData
+import kotlin.math.abs
 
 class AnimatedCardStackView @JvmOverloads constructor(
     context: Context,
@@ -14,6 +18,11 @@ class AnimatedCardStackView @JvmOverloads constructor(
     private var cardDataList: List<CardData> = emptyList()
     private val cards = mutableListOf<AnimatedCardView>()
     private var isRotated = false
+    private var horizontalDragOffset = 0f
+    private var verticalDragOffset = 0f
+    private val swipeThreshold = 100f
+    private var isAnimating = false
+    private var animationStep = 0
 
     fun setCards(newCardDataList: List<CardData>) {
         cardDataList = newCardDataList
@@ -71,8 +80,7 @@ class AnimatedCardStackView @JvmOverloads constructor(
             cardView.pivotX = cardWidth / 2f
             cardView.pivotY = cardHeight
 
-            // TODO: [Задание 1] Замените на метод, который анимирует движение карты
-            cardView.rotation = targetRotation
+            cardView.animateToRotation(targetRotation)
         }
     }
 
@@ -84,20 +92,268 @@ class AnimatedCardStackView @JvmOverloads constructor(
     }
 
     private fun startCardSwapAnimation(bottomCard: AnimatedCardView) {
-        // TODO: [Задание 5] Добавьте анимацию перетасовки карт
-        // На данном этапе просто быстро двигаем нижнюю карту наверх
+        if (isAnimating) return
+
+        isAnimating = true
+        animationStep = 1
+
+        bottomCard.moveCardRight {
+            animationStep = 2
+
+            bringCardToFront(bottomCard)
+
+            bottomCard.moveCardToTop {
+                animationStep = 3
+
+                reorderCardsData()
+                animateAllCardsToFinalPositions()
+            }
+        }
+    }
+
+    private fun reorderCardsData() {
         cardDataList = reorderCards(cardDataList)
-        setupCards()
+
+        val bottomCardView = cards.removeAt(0)
+        cards.add(bottomCardView)
+
+        cards.forEachIndexed { index, cardView ->
+            cardView.setCardData(cardDataList[index])
+        }
+    }
+
+    private fun animateAllCardsToFinalPositions() {
+        var completedAnimations = 0
+        val totalAnimations = cards.size
+
+        cards.forEachIndexed { index, cardView ->
+            val finalRotation = calculateFinalRotation(index)
+
+            cardView.adjustToFinalPosition(
+                finalRotation = finalRotation,
+                finalZOrder = index
+            ) {
+                completedAnimations++
+
+                if (completedAnimations == totalAnimations) {
+                    finalizeCardPositions()
+                }
+            }
+        }
+    }
+
+    private fun calculateFinalRotation(cardIndex: Int): Float {
+        val cardCount = cards.size
+
+        return if (isRotated) {
+            val angleStep = if (cardCount > 1) {
+                180f / (cardCount - 1)
+            } else {
+                0f
+            }
+
+            90f - (cardIndex * angleStep)
+        } else {
+            val angleStep = if (cardCount > 1) {
+                45f / (cardCount - 1)
+            } else {
+                0f
+            }
+
+            22.5f - (cardIndex * angleStep)
+        }
+    }
+
+    private fun finalizeCardPositions() {
+        cards.forEachIndexed { index, card ->
+            card.setStackPosition(index)
+            card.rotation = calculateFinalRotation(index)
+        }
+
+        isAnimating = false
+        animationStep = 0
     }
 
     // Простая функция перестановки карт
     fun reorderCards(cards: List<CardData>): List<CardData> {
         return cards.drop(1) + cards.first()
     }
-    // TODO: [Задание 2] Добавьте обработку жестов
-    // Подсказка: Используйте GestureDetector с методом onFling для обработки свайпов
 
-    // TODO: [Задание 3] Добавьте обработку вертикальных свайпов (вверх/вниз)
+    private val gestureDetector = GestureDetector(
+        context,
+        object : GestureDetector.SimpleOnGestureListener() {
 
-    // TODO: [Задание 4] Добавьте обработку горизонтальных свайпов (влево/вправо)
+            override fun onDown(e: MotionEvent): Boolean {
+                return true
+            }
+
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                return handleScroll(
+                    distanceX = distanceX,
+                    distanceY = distanceY
+                )
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                return handleFling(
+                    velocityX = velocityX,
+                    velocityY = velocityY
+                )
+            }
+        }
+    )
+
+    private fun handleScroll(
+        distanceX: Float,
+        distanceY: Float
+    ): Boolean {
+        horizontalDragOffset += distanceX
+        verticalDragOffset += distanceY
+
+        Log.d(
+            "CardsGesture",
+            "onScroll x=$horizontalDragOffset y=$verticalDragOffset"
+        )
+
+        return true
+    }
+
+    private fun handleFling(
+        velocityX: Float,
+        velocityY: Float
+    ): Boolean {
+        Log.d(
+            "CardsGesture",
+            "onFling velocityX=$velocityX velocityY=$velocityY"
+        )
+
+        val horizontalAbs = abs(velocityX)
+        val verticalAbs = abs(velocityY)
+
+        when {
+            verticalAbs > horizontalAbs -> {
+                handleVerticalSwipe(velocityY)
+            }
+
+            horizontalAbs > verticalAbs -> {
+                handleHorizontalSwipe(velocityX)
+            }
+
+            else -> {
+                Log.d("CardsGesture", "unknown fling")
+            }
+        }
+
+        horizontalDragOffset = 0f
+        verticalDragOffset = 0f
+
+        return true
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        gestureDetector.onTouchEvent(event)
+
+        if (event.action == MotionEvent.ACTION_UP) {
+            handleDragEnd()
+        }
+
+        return true
+    }
+
+    private fun handleDragEnd() {
+        if (isAnimating) {
+            horizontalDragOffset = 0f
+            verticalDragOffset = 0f
+            return
+        }
+
+        val horizontalAbs = abs(horizontalDragOffset)
+        val verticalAbs = abs(verticalDragOffset)
+
+        when {
+            verticalAbs > horizontalAbs -> {
+                handleVerticalSwipe(verticalDragOffset)
+            }
+
+            horizontalAbs > verticalAbs -> {
+                handleHorizontalSwipe(horizontalDragOffset)
+            }
+
+            else -> {
+                Log.d("CardsGesture", "unknown swipe")
+            }
+        }
+
+        horizontalDragOffset = 0f
+        verticalDragOffset = 0f
+    }
+
+
+    private fun handleVerticalSwipe(
+        verticalDragOffset: Float
+    ) {
+        when {
+            verticalDragOffset < -swipeThreshold -> {
+                isRotated = true
+                updateCardPositions()
+                Log.d("CardsGesture", "vertical swipe UP: $verticalDragOffset")
+            }
+
+            verticalDragOffset > swipeThreshold -> {
+                isRotated = false
+                updateCardPositions()
+                Log.d("CardsGesture", "vertical swipe DOWN: $verticalDragOffset")
+            }
+
+            else -> {
+                Log.d("CardsGesture", "vertical swipe too small: $verticalDragOffset")
+            }
+        }
+    }
+
+    private fun handleHorizontalSwipe(horizontalDragOffset: Float) {
+        when {
+            horizontalDragOffset < -swipeThreshold -> {
+                val bottomCard = cards.firstOrNull()
+                if (bottomCard != null) {
+                    startCardSwapAnimation(bottomCard)
+                }
+
+                Log.d("CardsGesture", "horizontal swipe LEFT: $horizontalDragOffset")
+            }
+
+            horizontalDragOffset > swipeThreshold -> {
+                val bottomCard = cards.firstOrNull()
+                if (bottomCard != null) {
+                    startCardSwapAnimation(bottomCard)
+                }
+
+                Log.d("CardsGesture", "horizontal swipe RIGHT: $horizontalDragOffset")
+            }
+
+            else -> {
+                Log.d("CardsGesture", "horizontal swipe too small: $horizontalDragOffset")
+            }
+        }
+    }
+
+    private fun bringCardToFront(card: AnimatedCardView) {
+        card.bringToFront()
+
+        val maxElevation = (4 + cards.size + 20).toFloat() *
+                resources.displayMetrics.density
+
+        card.cardView.cardElevation = maxElevation
+    }
+
 }

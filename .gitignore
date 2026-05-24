@@ -1,6 +1,7 @@
 *.iml
 .gradle
 /local.properties
+.idea/
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -13,3 +14,16 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# APK и AAB файлы (артефакты сборки)
+*.apk
+*.ap_
+*.aab
+
+# Keystore файлы
+*.jks
+*.keystore
+*.p12
+
+# Log files
+*.log
