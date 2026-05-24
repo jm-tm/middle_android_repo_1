@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.yandexpraktikum.cardsanimation.compose.AnimatedCardStack
 import ru.yandexpraktikum.cardsanimation.model.CardData
+import ru.yandexpraktikum.cardsanimation.training.TrainingCardsActivity
 import ru.yandexpraktikum.cardsanimation.ui.theme.CardsAnimationTheme
 
 class ComposeActivity : ComponentActivity() {
@@ -34,12 +35,17 @@ class ComposeActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AnimatedCardScreen(
                         modifier = Modifier.padding(innerPadding),
-                        cards = listOf(
-                            CardData(R.drawable.card_clover),
-                            CardData(R.drawable.card_hearts),
-                            CardData(R.drawable.card_spades),
-                            CardData(R.drawable.card_diamond)
-                        )
+                        cards = defaultCards,
+                        onOpenXmlView = {
+                            startActivity(
+                                Intent(this, XmlViewActivity::class.java)
+                            )
+                        },
+                        onOpenTrainingCards = {
+                            startActivity(
+                                Intent(this, TrainingCardsActivity::class.java)
+                            )
+                        }
                     )
                 }
             }
@@ -47,10 +53,19 @@ class ComposeActivity : ComponentActivity() {
     }
 }
 
+private val defaultCards = listOf(
+    CardData(R.drawable.card_clover),
+    CardData(R.drawable.card_hearts),
+    CardData(R.drawable.card_spades),
+    CardData(R.drawable.card_diamond)
+)
+
 @Composable
 fun AnimatedCardScreen(
     modifier: Modifier = Modifier,
-    cards: List<CardData>
+    cards: List<CardData>,
+    onOpenXmlView: () -> Unit,
+    onOpenTrainingCards: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -71,11 +86,15 @@ fun AnimatedCardScreen(
         Spacer(modifier = Modifier.height(60.dp))
 
         Button(
-            onClick = {
-                context.startActivity(Intent(context, XmlViewActivity::class.java))
-            }
+            onClick = onOpenXmlView
         ) {
             Text("Просмотреть версию на XML View")
+        }
+
+        Button(
+            onClick = onOpenTrainingCards
+        ) {
+            Text(text = "Открыть тренировочную колоду")
         }
     }
 }
